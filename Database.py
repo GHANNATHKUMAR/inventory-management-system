@@ -5,7 +5,7 @@ def connection() :
         host="localhost",
         database="ecommerce",
         user="postgres",
-        password="Ghannath@87",
+        password="124324324324",
         port="5432",
     )
     if con : 
