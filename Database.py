@@ -1,8 +1,9 @@
 import psycopg2
 import streamlit as st
 
-def connection():
-    con = psycopg2.connect(
+@st.cache_resource
+def get_connection():
+    return psycopg2.connect(
         host=st.secrets["DB_HOST"],
         database=st.secrets["DB_NAME"],
         user=st.secrets["DB_USER"],
@@ -10,6 +11,3 @@ def connection():
         port=st.secrets["DB_PORT"],
         sslmode="require"
     )
-    return con
-
-conn = connection()
