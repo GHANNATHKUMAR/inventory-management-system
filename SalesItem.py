@@ -1,22 +1,35 @@
-from Database import conn
+from Database import get_connection
+
 
 class SaleItems:
-    def __init__(self):
-        pass
 
     @staticmethod
     def create_table():
+        conn = get_connection()
         cur = conn.cursor()
+
         cur.execute("""
             CREATE TABLE IF NOT EXISTS sale_items(
                 id SERIAL PRIMARY KEY,
-                sale_id INTEGER NOT NULL,
-                product_id INTEGER NOT NULL,
-                quantity INTEGER NOT NULL,
-                price NUMERIC(10, 2) NOT NULL,
-                CONSTRAINT fk_sale_item_sale FOREIGN KEY (sale_id) REFERENCES sales(id) ON DELETE CASCADE,
-                CONSTRAINT fk_sale_item_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                sale_id INTEGER,
+                product_id INTEGER,
+                quantity INTEGER,
+                price NUMERIC(10,2)
             )
         """)
+
+        conn.commit()
+        cur.close()
+
+    @staticmethod
+    def insert_item(sale_id, product_id, qty, price):
+        conn = get_connection()
+        cur = conn.cursor()
+
+        cur.execute(
+            "INSERT INTO sale_items(sale_id, product_id, quantity, price) VALUES(%s,%s,%s,%s)",
+            (sale_id, product_id, qty, price)
+        )
+
         conn.commit()
         cur.close()
