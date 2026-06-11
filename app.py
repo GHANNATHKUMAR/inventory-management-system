@@ -1,6 +1,6 @@
 import streamlit as st 
 from datetime import date
-from Database import conn
+from Database import get_connection
 from Customers import customer 
 from Products import Products
 from Sales import Sales  
@@ -8,7 +8,7 @@ from SalesItem import SaleItems
 # ===== Excel Download Feature =====
 import pandas as pd
 from io import BytesIO
-
+conn=get_connection()
 
 def intialize_tables():
     try:
