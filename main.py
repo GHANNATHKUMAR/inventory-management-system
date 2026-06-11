@@ -1,8 +1,8 @@
-from Database import conn
+from Database import get_connection
 from Customers import customer 
 from Products import Products
 from Sales import Sales 
-
+conn=get_connection()
 
 def main_menu():
     while True : 
