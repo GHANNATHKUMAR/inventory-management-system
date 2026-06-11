@@ -13,4 +13,3 @@ def connection():
     return con
 
 conn = connection()
-
