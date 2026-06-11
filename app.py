@@ -1,106 +1,112 @@
-import streamlit as st 
+import streamlit as st
 from datetime import date
 from Database import get_connection
-from Customers import customer 
+from Customers import customer
 from Products import Products
-from Sales import Sales  
-from SalesItem import SaleItems 
-# ===== Excel Download Feature =====
+from Sales import Sales
+from SalesItem import SaleItems
+
 import pandas as pd
 from io import BytesIO
-conn=get_connection()
 
+# ================= SAFE CONNECTION =================
+def get_db():
+    if "conn" not in st.session_state:
+        st.session_state.conn = get_connection()
+    try:
+        # test connection
+        cur = st.session_state.conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+    except:
+        # reconnect if closed
+        st.session_state.conn = get_connection()
+    return st.session_state.conn
+
+
+conn = get_db()
+
+# ================= INIT TABLES =================
 def intialize_tables():
     try:
         customer.create_table()
         Products.create_table()
         Sales.create_table()
         SaleItems.create_table()
-        #fix sequences for each table 
-        cur=conn.cursor()
+
+        cur = conn.cursor()
         cur.execute("SELECT setval('customers_id_seq', COALESCE((SELECT MAX(id) FROM customers), 0) + 1, false)")
         cur.execute("SELECT setval('products_id_seq', COALESCE((SELECT MAX(id) FROM products), 0) + 1, false)")
         cur.execute("SELECT setval('sales_id_seq', COALESCE((SELECT MAX(id) FROM sales), 0) + 1, false)")
         cur.execute("SELECT setval('sale_items_id_seq', COALESCE((SELECT MAX(id) FROM sale_items), 0) + 1, false)")
         conn.commit()
         cur.close()
-        print("Tables created successfully")
+
     except Exception as e:
         print("Error creating tables:", e)
 
-#App title and sidebar 
+
+# ================= UI =================
 st.set_page_config(page_title="Smart Inventory and Billing System", layout="wide")
 st.title("Smart Inventory and Billing System")
 
-#intitalize tables on first run
 if "tables_initialized" not in st.session_state:
     intialize_tables()
     st.session_state.tables_initialized = True
 
-#sidebar navigation
 st.sidebar.header("Navigation")
-menu_option= st.sidebar.selectbox(
+menu_option = st.sidebar.selectbox(
     "choose an option",
-    [
-        "Dashboard",
-        "Customer Management",
-        "Product Management",
-        "Sales Management",
-        "Analytics and Reports"
-    ],
+    ["Dashboard", "Customer Management", "Product Management", "Sales Management", "Analytics and Reports"],
 )
 
-#Dashboard 
-if menu_option=="Dashboard":
+# ================= DASHBOARD =================
+if menu_option == "Dashboard":
     st.header("Dashboard")
-    st.write("Welcome to the Smart Inventory and Billing System Dashboard!")
-    st.write("Use the sidebar to navigate through different management sections and analytics.")
 
-    #show some statistics on the dashboard
     try:
-      
-      cur=conn.cursor()
-      cur.execute("SELECT COUNT(*) FROM customers")
-      customer_count = cur.fetchone()[0]
-      cur.execute("SELECT COUNT(*) FROM products")
-      product_count = cur.fetchone()[0]
-      cur.execute("SELECT COUNT(*) FROM sales")
-      sale_count = cur.fetchone()[0]
-      cur.close()
+        conn = get_db()
+        cur = conn.cursor()
 
-      st.subheader("Statistics")
-      st.write(f"Total Customers: {customer_count}")
-      st.write(f"Total Products: {product_count}")
-      st.write(f"Total Sales: {sale_count}")
+        cur.execute("SELECT COUNT(*) FROM customers")
+        customer_count = cur.fetchone()[0]
 
-      cur.close()
+        cur.execute("SELECT COUNT(*) FROM products")
+        product_count = cur.fetchone()[0]
 
-      #display metrices 
-      col1,col2,col3=st.columns(3)
-      col1.metric("Total Customers", customer_count)
-      col2.metric("Total Products", product_count)
-      col3.metric("Total Sales", sale_count)
+        cur.execute("SELECT COUNT(*) FROM sales")
+        sale_count = cur.fetchone()[0]
+
+        cur.close()
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Customers", customer_count)
+        col2.metric("Products", product_count)
+        col3.metric("Sales", sale_count)
 
     except Exception as e:
-        st.warning("Database statistics not available yet..")
+        st.warning("Database statistics not available yet")
 
-# Customer Management
+# ===================================================
+# KEEP REST OF YOUR CODE SAME (ONLY USE conn = get_db())
+# ===================================================
+
 elif menu_option == "Customer Management":
     st.header("👥 Customer Management")
-    
-    customer_action = st.radio("Select Action:", ["View All Customers", "Add New Customer", "Update Customer", "Delete Customer"])
-    
+
+    customer_action = st.radio(
+        "Select Action:",
+        ["View All Customers", "Add New Customer", "Update Customer", "Delete Customer"]
+    )
+
     if customer_action == "View All Customers":
-        st.subheader("All Customers")
         try:
+            conn = get_db()
             customers = customer.get_all_customers()
-            if customers:
-                for customer in customers:
-                    st.write(f"ID: {customer[0]}, Name: {customer[1]}, Contact: {customer[2]}")
-            else:
-                st.info("No customers found.")
+            for c in customers:
+                st.write(f"ID: {c[0]} | Name: {c[1]} | Contact: {c[2]}")
         except Exception as e:
-            st.error(f"Error retrieving customers: {e}")
+            st.error(e)
     
     elif customer_action == "Add New Customer":
         st.subheader("Add New Customer")
